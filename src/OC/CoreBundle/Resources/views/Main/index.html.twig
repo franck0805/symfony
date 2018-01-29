@@ -1,0 +1,34 @@
+{# src/OC/CoreBundle/Resources/views/Main/index.html.twig #}
+
+{% extends "OCCoreBundle::layout.html.twig" %}
+
+{% block title %}
+    Accueil - {{ parent() }}
+{% endblock %}
+
+{% block body %}
+
+    {# On définit un sous-titre commun à toutes les pages du bundle, par exemple #}
+    <h1>Dernières Annonces</h1>
+
+    <div>
+        {% for message in app.session.flashbag.get('info') %}
+            <p class="alert alert-info">Message Flash : {{ message }}</p>
+        {% endfor %}
+    </div>
+
+    <hr>
+    <ul>
+        {% for advert in listAdverts %}
+            <li>
+                <a href="{{ path('oc_platform_view', {'id': advert.id}) }}">
+                    {{ advert.title }}
+                </a>
+                par {{ advert.author }},
+                le {{ advert.date|date('d/m/Y') }}
+            </li>
+        {% else %}
+            <li>Pas encore d'annonces !</li>
+        {% endfor %}
+    </ul>
+{% endblock %}
