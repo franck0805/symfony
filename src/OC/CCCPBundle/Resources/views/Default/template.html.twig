@@ -1,0 +1,90 @@
+{% extends "JiwonCCCPBundle::layout.html.twig" %}
+
+{% block title %}- ACER v2{% endblock %}
+
+{% block body %}
+    {% if error is defined %}
+        <div class="alert alert-danger fade in">
+            <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+            {{ error }}
+        </div>
+    {% endif %}
+    <div class="col-md-12">
+        <h2>ACER v2 : Template</h2>
+        <p>Cette page vous permet de configurer les templates des Audits de Configuration des Equipements Réseaux. Les cases Réseau, Modèle ou Constructeur permettent de déterminer à quel groupe d'équipements le template est destiné. Example : Si la case Constructeur affiche ALCATEL mais Réseau et Modèle sont vides, alors le template va être exécuté pour tous les équipements ALCATEL. Il est par contre possible de créer un template général pour un réseau donné mais d'affiner pour des modèles particuliers.
+        <br><br>
+        <a href="{{ path('jiwon_cccp_template_new') }}" type="button" class="btn btn-sm btn-primary">Créer un nouveau template</a>
+        <br>
+        </p>
+    </div>
+    <div class="col-md-12">
+        <h4>Liste des templates existants</h4>
+        <form method="get">
+            <div class="form-group col-md-12">
+                <div class="col-md-10">
+                    <input type="text" class="form-control" name="search" placeholder="Taper pour rechercher puis Entrée (2 caractères minimum)" pattern=".{2,}" required>
+                </div>
+                <div class="col-md-2 margin-left-30">
+                    <button type="submit" class="btn btn-danger" title="Rechercher">Rechercher</button>
+                </div>
+            </div>
+        </form>
+        <table class="order-table table table-hover" id="results">
+            <thead>
+                <tr class="active">
+                    <th {% if templates.isSorted('c.categorie') %} class="sorted"{% endif %}>{{ knp_pagination_sortable(templates, 'Catégorie', 'c.categorie') }}</th>
+                    <th {% if templates.isSorted('a.nom') %} class="sorted"{% endif %}>{{ knp_pagination_sortable(templates, 'Nom', 'a.nom') }}</th>
+                    <th>Réseau</th>
+                    <th>Modèle</th>
+                    <th>Constructeur</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for template in templates %}
+                    <tr>
+                        <td>{{ template.idcategorie.categorie }}</td>
+                        <td>{{ template.nom }}</td>
+                        <td>{{ template.idassociation }}</td>
+                        <td>{{ template.idmodel }}</td>
+                        <td>{{ template.idconstructeur }}</td>
+                        <td><div class="btn-group btn-group-xs"><button type="button" class="btn btn-xs btn-primary" data-id="{{ template.nom }}" onclick="toogleTemplate(this)">Afficher</button>
+                            {% if is_granted('ROLE_CONFIGURATEUR_PLUS') %}
+                            <a href="{{ path('jiwon_cccp_template_modify', {id:template.id}) }}" type="button" class="btn btn-xs btn-primary">Modifier</a><a href="{{ path('jiwon_cccp_template_delete', {id:template.id}) }}" type="button" class="btn btn-xs btn-primary">Supprimer</a>{% endif %}
+                        </div></td>
+                    </tr>
+                    <tr style="visibility:collapse">
+                        <td colspan="6">
+                            <div id="{{ template.nom }}" style="display:none;">
+                                <textarea disabled style="width: 100%;padding: 10px;height: 500px;resize: none;font-size:12px">
+@modificateur: {{ template.iduser }}
+@date: Le {{ template.date|date('d/m/Y \à H:i') }}
+
+{{ files[template.nom] }}</textarea>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="navigation">
+            {{ knp_pagination_render(templates) }}
+        </div>
+    </div>
+{% endblock body %}
+
+{% block javascripts %}
+    <script>
+        function toogleTemplate(button) {
+            var tr = $('#' + ($(button).data("id")));
+            if(button.innerHTML == 'Afficher') { 
+                tr.parent().parent().css("visibility", "");
+                button.innerHTML = 'Masquer'
+            } else {
+                tr.parent().parent().css("visibility", "collapse");
+                button.innerHTML = 'Afficher';
+            }
+            tr.slideToggle("fast");
+        };
+    </script>
+{% endblock %}

@@ -1,0 +1,35 @@
+<table class="table table-bordered">
+	<thead>
+		<th class="active">Nom de l'équipement</th>
+		<th class="active">Résultat</th>
+		<th class="active">Match</th>
+		<th class="active">Détail</th>
+	</thead>
+    {% for i in data %}
+    	<tr>
+        {% set name = "" %}
+    	{% for j in i %}
+    		{% if j == "Not OK" %}
+    			<td class="danger" style="line-height: 1.5;white-space:pre;">{{j}}</td>	
+    		{% elseif j == "OK" %}
+    			<td class="success" style="line-height: 1.5;white-space:pre;">{{j}}</td>
+    		{% else %}
+                {% if j starts with 'Tests : ' %}
+    			{% else %}
+                {% set name = j %}
+                {% endif %}
+    			<td style="line-height: 1.5;white-space:pre;">{{j}}</td>
+    		{% endif %}
+    	{% endfor %}
+    		<td style="line-height: 1.5;"><a class="btn btn-primary btn-xs" href="{{ path('jiwon_audit_view_csv', {template:template, file:file, ne:name}) }}" onclick="window.open(this.href); return false;"><i class="fa fa-search"></i></a></td>
+    	</tr>
+    {% endfor %}
+    </tbody>
+	</table>
+	<center>
+  	<ul class="pagination">
+  		{% for i in total %}
+	    	<li><a onclick="getFilePreview({{i}});">{{i}}</a></li>
+	    {% endfor %}
+	</ul>
+</center>

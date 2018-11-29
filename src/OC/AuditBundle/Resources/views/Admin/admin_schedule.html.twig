@@ -1,0 +1,55 @@
+{% extends "::base.bis.html.twig" %}
+
+{% block title %}- Modification du schedule{% endblock %}
+
+{% block body %}
+    <div class="col-md-8 col-md-offset-2">
+        <div style="text-align:center">
+            <h4>Modifier le schedule</h4>
+        </div>
+        <form method="post">
+            <div class="form-group">
+                {{ form_label(form.recurrence) }}
+                {{ form_widget(form.recurrence, {'attr': {'class': 'form-control'}}) }}
+            </div>
+            <div class="form-group">
+                {{ form_label(form.heure) }}
+                {{ form_widget(form.heure, {'attr': {'class': 'form-control'}}) }}
+            </div>
+            <div class="form-group">
+                {{ form_label(form.type) }}
+                {{ form_widget(form.type, {'attr': {'class': 'form-control'}}) }}
+            </div>
+            <div class="form-group">
+                {{ form_label(form.exports) }}
+                {{ form_widget(form.exports, {'attr': {'class': 'form-control multipleselect'}}) }}
+            </div>
+            {% if is_granted('ROLE_SUPER_ADMIN') %}
+                <div class="form-group">
+                    <label>Enable {{ form_widget(form.enable, {'attr': {'class': 'pull-right'}}) }}</label>
+                </div>
+            {% else %}
+                {% if schedule.enable == 1 %}
+                    <div class="form-group">
+                        <a href="{{ path('jiwon_audit_schedule_disable', {id:''~schedule.id}) }}">Désactiver</a>
+                    </div>
+                {% endif %}
+            {% endif %}
+            <button type="submit" class="btn btn-primary">Envoyer</button>
+        </form>
+    </div>
+{% endblock body %}
+
+{% block javascripts %}
+    <script>
+        jQuery(document).ready(function(){
+            $('#crontab_heure').bootstrapMaterialDatePicker({ date: false, lang : 'fr', time: true, format: "HH:mm", cancelText: "Annuler", okText: "Minutes" });
+            $('.multipleselect').chosen({
+                placeholder_text_multiple : "Sélectionner un ou plusieurs exports",
+                no_results_text : "Pas de résultat",
+                search_contains: true,
+            });
+        });
+    
+    </script>
+{% endblock %}

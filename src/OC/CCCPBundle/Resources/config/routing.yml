@@ -1,0 +1,37 @@
+jiwon_cccp_homepage:
+    path:     /audit-cccp/resultat/
+    defaults: { _controller: JiwonCCCPBundle:Default:index }
+
+jiwon_cccp_audit:
+    path:     /audit-cccp/
+    defaults: { _controller: JiwonCCCPBundle:Default:audit }
+
+jiwon_cccp_template:
+    path:     /audit-cccp/template/
+    defaults: { _controller: JiwonCCCPBundle:Default:template }
+
+jiwon_cccp_template_new:
+    path:     /audit-cccp/new-template/
+    defaults: { _controller: JiwonCCCPBundle:Default:newTemplate }
+
+jiwon_cccp_template_modify:
+    path:     /audit-cccp/modify-template/{id}
+    defaults: { _controller: JiwonCCCPBundle:Admin:modTemplate }
+
+jiwon_cccp_template_delete:
+    path:     /audit-cccp/delete-template/{id}
+    defaults: { _controller: JiwonCCCPBundle:Admin:delTemplate }
+
+jiwon_cccp_download_csv:
+    path:     /audit-cccp/download/{path}
+    defaults: { _controller: JiwonCCCPBundle:Default:downloadCSV }
+
+jiwon_cccp_show_csv:
+    path:     /audit-cccp/show/{path}
+    defaults: { _controller: JiwonCCCPBundle:Default:showCSV }
+
+
+
+jiwon_acrlbb_homepage:
+    path:     /audit-acrlbb/
+    defaults: { _controller: JiwonCCCPBundle:AcrlbbDefault:index }

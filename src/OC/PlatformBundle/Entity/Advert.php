@@ -62,6 +62,11 @@ class Advert
     private $image;
 
     /**
+     * @ORM\ManyToMany(targetEntity="OC\PlatformBundle\Entity\Category", cascade={"persist})
+     */
+    private $categories;
+
+    /**
      * Advert constructor.
      */
     // Constructeur de notre classe

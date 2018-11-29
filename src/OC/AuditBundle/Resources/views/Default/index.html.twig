@@ -1,0 +1,213 @@
+{% extends "base.bis.html.twig" %}
+
+{% block title %}- Audit ACER{% endblock %}
+
+{% block body %}
+    {% if success is defined %}
+        <div class="alert alert-info">
+            <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+            {{ success }} Le résultat sera visible sur la page de <a href="{{ path('jiwon_audit_recherche') }}">Recherche</a>.
+        </div>
+    {% endif %}
+    <div class="col-md-7">
+        <h2>Audits de Configuration des Equipements Réseaux</h2>
+        <p>Cette page vous permet de visualiser le dernier résultat d'un Audit de Configuration des Equipements Réseaux sur un Réseau / Type_Ne sélectionné.<br>
+        </p>
+    </div>
+    <div class="col-md-5">
+        <br><br>
+        <div class="btn-group">
+            <a class="btn btn-success" href="{{ path('jiwon_audit_schedule') }}" role="button">Schedule</a>
+        </div>
+        <div class="btn-group" style="margin-left:10px">
+            <a class="btn btn-info" href="{{ path('jiwon_audit_template') }}" role="button">Template</a>
+        </div>
+        <div class="btn-group" style="margin-left:10px">
+            <a class="btn btn-warning" href="{{ path('jiwon_audit_recherche') }}" role="button">Recherche</a>
+        </div>
+    </div>
+    <form method="post">
+        <div class="col-md-12 form-group jumbotron" id="menu">
+            <h4>Filtrer la liste des templates selon vos critères</h4>
+            <p>Vous devez obligatoirement sélectionner un réseau/type_ne. Le constructeur et le modèle sont facultatifs. La liste des templates correspondants à vos filtres apparaîtra en-dessous.</p>
+            <div class="col-md-4">
+                <select class="form-control" id="association" onchange="getTemplates();getConstructeurs(this.value);hideAudit()" name="reseau">
+                    <option value="null" disabled {% if reseau is null %}selected{% endif %}>Réseau / Type NE</option>
+                    {% for association in associations %}
+                        <option {% if reseau == association.id %}selected{% endif %} value="{{ association.id }}">{{ association.idreseau.reseau }} / {{ association.idtypene.type }}</option>
+                    {% endfor %}
+                </select><br>
+            </div>
+            <div class="col-md-4">
+                <select id="constructeurs" class="form-control constructeurselect" onchange="getModels(this.value);getNes(this.value, null);getTemplates();" name="constructeur">
+                    <option value="null" selected>Constructeur</option>
+                </select><br>
+            </div>
+            <div class="col-md-4">
+                <select id="models" class="form-control" onchange="getNes(null, this.value);getTemplates();" required="false" name="model">
+                    <option value="null" selected>Modèle</option>
+                </select>
+            </div>
+            <br><br>
+        </div>
+        <div class="col-md-12 form-group jumbotron">
+            <h4>Choisissez un template et lancer un audit immédiatement</h4>
+            <p>Par défaut, l'audit s'effectuera sur la configuration inventaire du Rancid. Il est également possible d'auditer la configuration sauvegarde en changeant l'option du select plus bas.</p>
+            <div class="col-md-4">
+                <select id="template" class="form-control" name="template" onchange="showAudit();" required>
+                    <option value="null" disabled selected>Template</option>
+                    {% for temp in templates %}
+                        <option {% if template is defined %}{% if template == temp.id %}selected{% endif %}{% endif %} value="{{ temp.id }}">{{ temp.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <select class="form-control" id="conf" name="conf">
+                    <option value="inventaire" {% if conf is defined %}{% if conf == 'inventaire' %}selected{% endif %}{% endif %}>Inventaire</option>
+                    <option value="sauvegarde" {% if conf is defined %}{% if conf == 'sauvegarde' %}selected{% endif %}{% else %}selected{% endif %}>Sauvegarde</option>
+                </select><br>
+            </div>
+            <div class="col-md-8">
+                <button class="btn btn-primary" id="link" style="display:none" type="submit">Lancer l'audit</button>
+            </div>
+            <br>
+        </div>
+        <div class="col-md-12 form-group jumbotron">
+            <h4><i>Facultatif - Choisissez d'auditer des équipements précis</i></h4>
+            <p>Pour afficher une liste de NE, vous devez obligatoirement sélectionner un constructeur. <b>Si aucun NE n'est sélectionné, l'audit se fera sur l'ensemble des NE du réseau.</b> Vous pouvez également fournir une liste de NE sous format CSV (hostname;ip) à droite. A noter que si vous fournissez une liste, les NE cochés à gauche ne seront pas pris en compte.</p>
+            <div class="col-md-6">
+                <input type="text" class="form-control light-table-filter" id="search" placeholder="Taper pour filtrer" data-table="order-table"><br>
+                <table class="order-table table table-hover" id="results">
+                    <thead>
+                        <tr class="active">
+                            <td><input type="checkbox" onClick="toggle(this)"></td>
+                            <td>Nom de l'équipement</td>
+                            <td>IP</td>
+                        </tr>
+                    </thead>
+                    <tbody id="ne">
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <textarea rows="10" placeholder="hostname;ip" class="form-control text-area" name="hand" style="background:#F5F5F5;">{% if main is defined %}{{ main }}{% endif %}</textarea>
+            </div>
+        </div>
+    </form>
+    <div class="col-md-9" id="csv">
+    </div>
+{% endblock body %}
+
+{% block javascripts %}
+    <script>
+        var $reseau = $('#association');
+        $reseau.change();
+        function getConstructeurs(id_asso){
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/constructeur_search',
+                data: "&id="+id_asso,
+                success: function(data) {
+                    $('#constructeurs').html(data).show();
+                    {% if construc is defined %}
+                        $("#constructeurs").val({{ construc }});
+                        $("#constructeurs").change();
+                    {% endif %}
+                }
+            });
+        };
+        function getModels(id_cons){
+            var e = document.getElementById("association");
+            var id_asso = e.options[e.selectedIndex].value;
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/model_search',
+                data: "&id="+id_cons+"&asso="+id_asso,
+                success: function(data) {
+                    $('#models').html(data).show();
+                    {% if modele is defined and modele != 'null' %}
+                        $("#models").val({{ modele }});
+                        $("#models").change();
+                    {% endif %}
+                }
+            });
+        };
+        function getTemplates(){
+            var e = document.getElementById("association");
+            var id_asso = e.options[e.selectedIndex].value;
+            var f = document.getElementById("models");
+            if(f.options[f.selectedIndex] != null) {
+                var id_model = f.options[f.selectedIndex].value;
+            }
+            else {
+                var id_model = "null";
+            }
+            var g = document.getElementById("constructeurs");
+            if(g.options[g.selectedIndex] != null) {
+                var cons = g.options[g.selectedIndex].value;
+            }
+            else {
+                var cons = "null";
+            }
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/template_search',
+                data: "&asso="+id_asso+"&cons="+cons+"&model="+id_model,
+                success: function(data) {
+                    $('#template').html(data).show();
+                    {% if template is defined and template != 'null' %}
+                        $("#template").val({{ template }});
+                        $("#template").change();
+                    {% endif %}
+                }
+            });
+        };
+        function showAudit(){
+            var e = document.getElementById("template");
+            var id_template = e.options[e.selectedIndex].value;
+            if(id_template == "null")
+            {
+                $("#link").hide();
+            }
+            else
+            {
+                $("#link").show();
+            }
+        };
+        function hideAudit(){
+            $("#link").hide();
+        };
+        function toggle(source){
+            checkboxes = document.getElementsByName('ne[]');
+            for(var i=0, n=checkboxes.length;i<n;i++) {
+                checkboxes[i].checked = source.checked;
+            }
+        };
+        function include(arr, obj) {
+            return (arr.indexOf(obj) != -1);
+        }
+        function getNes(id_cons, id_model){
+            var e = document.getElementById("association");
+            var id_asso = e.options[e.selectedIndex].value;
+            var f = document.getElementById("constructeurs");
+            var id_cons = f.options[f.selectedIndex].value;
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/ne2_search',
+                data: "&id="+id_cons+"&model="+id_model+"&asso="+id_asso,
+                success: function(data) {
+                    $('#ne').html(data).show();
+                    {% if nes is defined %}
+                        var checked_ne = {{ nes|json_encode|raw }};
+                        var boxes = document.getElementsByName("ne[]");
+                        for (i = 0; i < boxes.length; i++) {
+                            if(include(checked_ne, $(boxes[i]).val())) {
+                                $(boxes[i]).click();
+                            }
+                        }
+                    {% endif %}
+                }
+            });
+        };
+    </script>
+{% endblock javascripts %}

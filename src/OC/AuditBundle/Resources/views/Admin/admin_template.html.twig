@@ -1,0 +1,37 @@
+{% extends "::base.bis.html.twig" %}
+
+{% block title %}- Administration des templates{% endblock %}
+
+{% block body %}
+    <div class="col-md-12">
+        <div style="text-align:center">
+            <h4>Administration des templates</h4><br>
+        </div>
+        <table class="table">
+            <thead>
+                <tr class="active">
+                    <th>Nom</th>
+                    <th>Reseau / Type NE</th>
+                    <th>Constructeur</th>
+                    <th>Modèle</th>
+                    <th>Version</th>
+                    <th>Type</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for template in templates %}
+                    <tr>
+                        <td>{{ template.nom }}</td>
+                        <td>{{ template.idassociation }}</td>
+                        <td>{{ template.idconstructeur }}</td>
+                        <td>{{ template.idmodele }}</td>
+                        <td>{{ template.version }}</td>
+                        <td>{{ template.type }}</td>
+                        <td><a href="{{ path('jiwon_audit_delete_template', {id:template.id}) }}"><i class="fa fa-times"></i></a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock body %}

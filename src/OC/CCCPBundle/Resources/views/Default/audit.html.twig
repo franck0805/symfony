@@ -1,0 +1,55 @@
+{% extends "JiwonCCCPBundle::layout.html.twig" %}
+
+{% block title %}- ACER v2{% endblock %}
+
+{% block body %}
+    <div class="col-md-12">
+        <h2>ACER v2 : Audit</h2>
+        <p>Cet outil permet de suivre la conformité du parc d’équipements de manière automatisée.<br><br></p>
+    </div>
+
+    <div class="col-md-12">
+        <h3>Lancer un audit</h3>
+        <p>Cette page permet de lancer un inventaire complet sur tout le réseau, une catégorie de templates, ou un template donné.<br></p>
+        {% if error is defined %}
+            <div class="alert alert-danger">
+                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                {{ error }}
+            </div>
+        {% endif %}
+        {% if success is defined %}
+            <div class="alert alert-success">
+                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                {{ success }}
+            </div>
+        {% endif %}
+        <form method="post">
+            <div class="col-md-12 form-group jumbotron">
+                <h4>Selectionner une catégorie et lancez l'audit</h4>
+                <div class="col-md-12">
+                     <button type="submit" class="btn btn-primary" name="submit" value="tous">Lancer un audit sur tout le réseau</button><br><br>
+                </div>
+                <div class="col-md-4">
+                    <select class="form-control" name="categorie" required>
+                        {% for categorie in categories %}
+                            <option value="{{ categorie.categorie }}">{{ categorie.categorie }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <button type="submit" class="btn btn-primary" name="submit" value="categorie">Lancer un audit selon la catégorie</button><br><br>
+                </div>
+                <div class="col-md-4">
+                    <select class="form-control" name="template" required>
+                        {% for template in templates %}
+                            <option value="{{ template.nom }}">{{ template.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <button type="submit" class="btn btn-primary" name="submit" value="template">Lancer un audit selon le template</button>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock body %}

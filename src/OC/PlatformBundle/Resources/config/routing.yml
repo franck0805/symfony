@@ -36,3 +36,10 @@ oc_platform_delete:
     defaults: { _controller: OCPlatformBundle:Advert:delete }
     requirements:
         id: \d+
+
+# Modification de l'image d'une annonce
+oc_platform_edit_image:
+    path: /advert/editImage/{advertId}
+    defaults: { _controller: OCPlatformBundle:Advert:editImage }
+    requirements:
+        advertId: \d+

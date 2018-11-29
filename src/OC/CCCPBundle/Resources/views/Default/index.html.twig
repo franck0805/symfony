@@ -1,0 +1,91 @@
+{% extends "JiwonCCCPBundle::layout.html.twig" %}
+
+{% block title %}- ACER v2{% endblock %}
+
+{% block body %}
+    <div class="col-md-12">
+        <h2>ACER v2 : Résultat</h2>
+        <p>Cet page permet de suivre les résultats d'audit du parc d’équipements.<br><br></p>
+    </div>
+    <form method="post">
+        <div class="col-md-7">
+            {% for template in templates %}
+                <label class="checkbox-inline"><input type="checkbox" name="checkbox[]" value="{{template.categorie}}" {% if template in (templates_filtered) %}checked{% endif %}>{{template.categorie}}</label>
+            {% endfor %}
+        </div>
+        <div class="col-md-5">
+            <button class="btn btn-primary btn-sm" name="submit" value="categories" type="submit">Trier le tableau</button><br><br>
+        </div>
+    </form>
+    <div class="col-md-12">
+        <form method="post" class="form-horizontal">
+            <div class="col-md-12 form-group">
+                <p><i>Facultatif - Choisissez d'afficher l'audit les résultats d'un équipement en particulier</i></p>
+                <label class="col-md-2 control-label required" style="text-align: center;" for="ne">Nom de l'équipement:*</label></a>
+                <div class="col-md-3">
+                    <input type="text" id="ne" name="ne" required="required" class="form-control" oncopy="return true" onpaste="return true">
+                </div>
+                <div class="col-md-6 col-md-offset-1">
+                    <button type="submit" class="btn btn-sm btn-primary" name="submit" value="filtre">Filtrer les résultats</button><br><br>
+                </div>
+                <p>*Vous devez obligatoirement taper au moins 2 lettres.</p>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-12">
+        <p><i>Filtrez les résultats des audits selon vos critères en déroulant l'arborescence</i></p>
+    </div>
+    <table class="order-table table table-hover table-header-rotated">
+        <thead>
+            <tr>
+                <th></th>
+                {% for template in templates_filtered %}
+                    <th class="rotate-45"><div><span>{{template.categorie}}</span></div></th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {{ results|raw }}
+        </tbody>
+    </table>
+{% endblock body %}
+
+{% block javascripts %}
+    <script>            
+        jQuery(document).ready(function(){
+            $('#ne').autocompleter({
+                url_list: '/ajax/searchne_new',
+                url_get: '/ajax/searchne_new',
+            });
+            $("#ne").bind("paste", function () {
+                setTimeout(function () {
+                $('#ne').autocompleter({
+                        url_list: '/ajax/searchne_new',
+                        url_get: '/ajax/searchne_new',
+                    });
+                }, 0);
+            });
+        });
+        function showTable(button) {
+            button.innerHTML = "<i class='fa fa-minus-square-o' aria-hidden='true'>";
+            var allTr = document.querySelectorAll('tr[class$='+$(button).data('class')+']'), i;
+            var regex2 = new RegExp("_"+$(button).data('class'));
+            for (i = 0; i < allTr.length; ++i) {
+                console.log(allTr[i].innerHTML);
+                if(allTr[i].innerHTML.match(regex2)) continue;
+                allTr[i].style.display = "";
+            }
+            $(button).attr("onclick", "hideTable(this)");
+        };
+        function hideTable(button) {
+            button.innerHTML = "<i class='fa fa-plus-square-o' aria-hidden='true'>";
+            var allTr = document.querySelectorAll('tr[class*='+$(button).data('class')+']'), i;
+            for (i = 0; i < allTr.length; ++i) {
+                allTr[i].innerHTML = allTr[i].innerHTML.replace("fa-minus-square-o", "fa-plus-square-o");
+                allTr[i].innerHTML = allTr[i].innerHTML.replace("hideTable", "showTable");
+                allTr[i].style.display = "none";
+            }
+            $(button).attr("onclick", "showTable(this)");
+        };
+    </script>
+{% endblock javascripts %}

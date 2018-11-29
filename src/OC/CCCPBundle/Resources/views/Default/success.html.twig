@@ -1,0 +1,15 @@
+{% extends '::base.html.twig' %}
+
+{% block body %}
+    <div class="col-md-6">
+        <a class="btn btn-lg btn-primary" href="{{ path('jiwon_homepage') }}" onClick="javascript: history.go(-1);return false;" role="button">Retour</a></br></br></br>
+    </div>
+    <div class="col-md-12 text-center">
+        {% if error is defined %}
+            <div class="alert alert-danger"><p>{{ error }}</p></div>
+        {% endif %}
+        {% if success is defined %}
+            <div class="alert alert-success"><p>{{ success }}</p></div>
+        {% endif %}
+    </div>
+{% endblock %}

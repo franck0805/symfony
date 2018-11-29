@@ -1,0 +1,22 @@
+<table class="table table-bordered">
+	<thead>
+		<th class="active">Nom de l'équipement</th>
+		<th class="active">Ligne de template</th>
+		<th class="active">Resultat</th>
+	</thead>
+    {% for i in data %}
+    	<tr>
+    	{% for j in i %}
+    		<td style="line-height: 1.1;white-space:pre;">{{j}}</td>
+    	{% endfor %}
+    	</tr>
+    {% endfor %}
+    </tbody>
+	</table>
+	<center>
+  	<ul class="pagination">
+  		{% for i in total %}
+	    	<li><a onclick="getFile({{i}});">{{i}}</a></li>
+	    {% endfor %}
+	</ul>
+</center>

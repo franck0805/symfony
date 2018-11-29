@@ -1,0 +1,285 @@
+{% extends "base.bis.html.twig" %}
+
+{% block title %}- Edition des schedules{% endblock %}
+
+{% block body %}
+    <div class="col-md-7">
+        <h2>Edition des schedules</h2>
+        <p>Cette page vous permet de configurer les schedules des Audits de Configuration des Equipements Réseaux.<br>
+        Définissez les options plus bas et appuyez sur le bouton envoyer pour ajouter un nouveau schedule.<br>
+        Un administrateur validera votre saisie et procédera, si besoin, à un changement d'horaire.<br><br>
+        </p>
+    </div>
+    <div class="col-md-5">
+        <br><br>
+        <div class="btn-group">
+            <a class="btn btn-primary" href="{{ path('jiwon_audit_homepage') }}" role="button">Lancer l'audit</a>
+        </div>
+        <div class="btn-group" style="margin-left:10px">
+            <a class="btn btn-info" href="{{ path('jiwon_audit_template') }}" role="button">Template</a>
+        </div>
+        <div class="btn-group" style="margin-left:10px">
+            <a class="btn btn-warning" href="{{ path('jiwon_audit_recherche') }}" role="button">Recherche</a>
+        </div>
+        {% if is_granted('ROLE_SUPER_ADMIN') %}
+            <div class="btn-group" style="margin-left:10px">
+                <a class="btn btn-success" href="{{ path('jiwon_audit_schedule_admin') }}" role="button" target="_blank">Admin</a>
+            </div>
+        {% endif %}
+    </div>
+    <div class="col-md-12 form-group jumbotron" id="menu">
+        <h4>Filtrez selon vos critères</h4>
+        <p>Vous devez obligatoirement sélectionner un réseau/type_ne. Le constructeur et le modèle sont facultatifs.<br>Vous pourrez sélectionner plus bas une liste d'équipements à auditer.</p>
+        <div class="col-md-4">
+            <select class="form-control" id="association" onchange="getTemplates();getConstructeurs(this.value);getRancidHoraire(this.value);" name="reseau" required>
+                <option value="" disabled {% if reseau is null %}selected{% endif %}>Réseau / Type NE</option>
+                {% for association in associations %}
+                    <option {% if reseau is not null %}{% if reseau == association.id %}selected{% endif %}{% endif %} value="{{ association.id }}">{{ association.idreseau.reseau }} / {{ association.idtypene.type }}</option>
+                {% endfor %}
+            </select><br>
+        </div>
+        <div class="col-md-4">
+            <select id="constructeurs" class="form-control constructeurselect" onchange="getModels(this.value);getNes(this.value, null);getTemplates();" name="constructeur">
+                <option value="" disabled selected>Constructeur</option>
+            </select><br>
+        </div>
+        <div class="col-md-4">
+            <select id="models" class="form-control" onchange="getNes(null, this.value);getTemplates();" required="false" name="model">
+                <option value="null" selected>Modèle</option>
+            </select>
+        </div>
+        <div class="col-md-12" id="rancid">
+        </div>
+        <br><br>
+    </div>
+    <form method="post">
+        <div class="col-md-6 form-group jumbotron">
+            <h4>Choisissez votre template et options</h4>
+            <p>Les récurrences déjà existantes du template appraîtront à droite. Vous avez également la possibilité d'en ajouter d'autres en envoyant ce formulaire.</p>
+            <label for="select" class="col-lg-3 control-label">Template</label>
+            <div class="col-md-8">
+                <select id="template" class="form-control" name="template" required onchange="getCrontabs(this.value);getRancidHoraireByTemplate();">
+                    <option value="null" disabled selected>Template</option>
+                    {% for temp in templates %}
+                        <option value="{{ temp.id }}">{{ temp.nom }}</option>
+                    {% endfor %}
+                </select><br>
+            </div>
+            <label for="select" class="col-lg-3 control-label">Récurrence</label>
+            <div class="col-md-8">
+                <select class="form-control" name="recurrence" required>
+                    <option value="" disabled selected>Récurrence</option>
+                    <option value="Tous les jours">Tous les jours</option>
+                </select><br>
+            </div>
+            <label for="time" class="col-lg-3 control-label">Heure</label>
+            <div class="col-md-8">
+                <input type="text" name="time" id="time" required><br><br>
+            </div>
+            <label for="type" class="col-lg-3 control-label">Type</label>
+            <div class="col-md-8">
+                <select class="form-control" name="type" required>
+                    <option value="inventaire">Inventaire</option>
+                    <option value="sauvegarde">Sauvegarde</option>
+                </select><br>
+            </div>
+            <label for="time" class="col-lg-3 control-label">Export</label>
+            <div class="col-md-8">
+                <select multiple class="form-control multipleselect" name="export[]">
+                    {% for export in exports %}
+                        <option value="{{ export.id }}">{{ export.nom }}</option>
+                    {% endfor %}
+                </select><br><br>
+            </div>
+            {% if is_granted('ROLE_SUPER_ADMIN') %}
+                <label for="select" class="col-lg-3 control-label">Enable</label>
+                <div class="col-md-8">
+                    <label><input name="enable" type="checkbox" value="1"> Ceci activera la récurrence</label><br><br>
+                </div>
+            {% endif %}
+            <div class="col-md-8">
+                <button class="btn btn-primary" type="submit">Envoyer</button><br><br>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <table class="order-table table table-hover">
+                <thead>
+                    <tr class="active">
+                        <th>Heure</th>
+                        <th>Récurrence</th>
+                        <th>Type</th>
+                        <th>Activé</th>
+                        <th></th>
+                        {% if is_granted('ROLE_SUPER_ADMIN') %}
+                            <th></th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody id="crontabs">
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md-12 form-group jumbotron">
+            <h4><i>Facultatif - Choisissez d'auditer des équipements précis</i></h4>
+            <p>Pour afficher une liste de NE, vous devez obligatoirement sélectionner un constructeur. <b>Si aucun NE n'est sélectionné, l'audit se fera sur l'ensemble des NE du réseau.</b> Vous pouvez également fournir une liste de NE sous format CSV (hostname;ip) à droite. A noter que si vous fournissez une liste, les NE cochés à gauche ne seront pas pris en compte.</p>
+            <div class="col-md-6">
+                <input type="text" class="form-control light-table-filter" id="search" placeholder="Taper pour filtrer" data-table="order-table"><br>
+                <table class="order-table table table-hover" id="results">
+                    <thead>
+                        <tr class="active">
+                            <td><input type="checkbox" onClick="toggle(this)"></td>
+                            <td>Nom de l'équipement</td>
+                            <td>IP</td>
+                        </tr>
+                    </thead>
+                    <tbody id="ne">
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <textarea rows="10" placeholder="hostname;ip" class="form-control text-area" name="hand" style="background:#F5F5F5;">{% if main is defined %}{{ main }}{% endif %}</textarea>
+            </div>
+        </div>
+    </form>
+{% endblock body %}
+
+{% block javascripts %}
+    <script>
+        $('#time').bootstrapMaterialDatePicker({ date: false, lang : 'fr', time: true, format: "HH:mm", cancelText: "Annuler", okText: "Minutes" });
+        $('.multipleselect').chosen({
+            placeholder_text_multiple : "Sélectionner ou non un ou plusieurs exports",
+            no_results_text : "Pas de résultat",
+            search_contains: true,
+        });
+        var $reseau = $('#association');
+        $reseau.change();
+        function getConstructeurs(id_asso){
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/constructeur_search',
+                data: "&id="+id_asso,
+                success: function(data) {
+                    $('#constructeurs').html(data).show();
+                    {% if construc is defined %}
+                        $("#constructeurs").val({{ construc }});
+                        $("#constructeurs").change();
+                    {% endif %}
+                }
+            });
+        };
+        function getModels(id_cons){
+            var e = document.getElementById("association");
+            var id_asso = e.options[e.selectedIndex].value;
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/model_search',
+                data: "&id="+id_cons+"&asso="+id_asso,
+                success: function(data) {
+                    $('#models').html(data).show();
+                    {% if modele is defined and modele != 'null' %}
+                        $("#models").val({{ modele }});
+                        $("#models").change();
+                    {% endif %}
+                }
+            });
+        };
+        function getTemplates(){
+            var e = document.getElementById("association");
+            var id_asso = e.options[e.selectedIndex].value;
+            var f = document.getElementById("models");
+            if(f.options[f.selectedIndex] != null) {
+                var id_model = f.options[f.selectedIndex].value;
+            }
+            else {
+                var id_model = "null";
+            }
+            var g = document.getElementById("constructeurs");
+            if(g.options[g.selectedIndex] != null) {
+                var cons = g.options[g.selectedIndex].value;
+            }
+            else {
+                var cons = "null";
+            }
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/template_search',
+                data: "&asso="+id_asso+"&cons="+cons+"&model="+id_model,
+                success: function(data) {
+                    $('#template').html(data).show();
+                    {% if template is defined and template != 'null' %}
+                        $("#template").val({{ template }});
+                        $("#template").change();
+                    {% endif %}
+                }
+            });
+        };
+        function getCrontabs(id_template){
+            var e = document.getElementById("template");
+            var id_template = e.options[e.selectedIndex].value;
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/crontab_search',
+                data: "&temp="+id_template,
+                success: function(data) {
+                    $('#crontabs').html(data).show();
+                }
+            });
+        };
+        function getRancidHoraire(id_asso){
+            var e = document.getElementById("association");
+            var id_asso = e.options[e.selectedIndex].value;
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/rancid_search',
+                data: "&asso="+id_asso,
+                success: function(data) {
+                    $('#rancid').html(data).show();
+                }
+            });
+        };
+        function getRancidHoraireByTemplate(){
+            var e = document.getElementById("template");
+            var id_template = e.options[e.selectedIndex].value;
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/rancid_search_template',
+                data: "&template="+id_template,
+                success: function(data) {
+                    $('#rancid').html(data).show();
+                }
+            });
+        };
+        function toggle(source){
+            checkboxes = document.getElementsByName('ne[]');
+            for(var i=0, n=checkboxes.length;i<n;i++) {
+                checkboxes[i].checked = source.checked;
+            }
+        };
+        function include(arr, obj) {
+            return (arr.indexOf(obj) != -1);
+        }
+        function getNes(id_cons, id_model){
+            var e = document.getElementById("association");
+            var id_asso = e.options[e.selectedIndex].value;
+            var f = document.getElementById("constructeurs");
+            var id_cons = f.options[f.selectedIndex].value;
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/ne2_search',
+                data: "&id="+id_cons+"&model="+id_model+"&asso="+id_asso,
+                success: function(data) {
+                    $('#ne').html(data).show();
+                    {% if nes is defined %}
+                        var checked_ne = {{ nes|json_encode|raw }};
+                        var boxes = document.getElementsByName("ne[]");
+                        for (i = 0; i < boxes.length; i++) {
+                            if(include(checked_ne, $(boxes[i]).val())) {
+                                $(boxes[i]).click();
+                            }
+                        }
+                    {% endif %}
+                }
+            });
+        };
+    </script>
+{% endblock javascripts %}

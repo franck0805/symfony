@@ -1,0 +1,23 @@
+{% extends "JiwonCCCPBundle::layout.html.twig" %}
+
+{% block title %}- ACER v2{% endblock %}
+
+{% block body %}
+    <h3>{{ title }}<br><br></h3>
+    <table class="table table-bordered">
+        <thead>
+            <th class="active">Nom de l'équipement</th>
+            <th class="active">Template</th>
+            <th class="active">Match</th>
+            <th class="active">Détail</th>
+        </thead>
+        {% for i in data %}
+            <tr>
+            {% for j in i %}
+                <td class="text-left" style="line-height:1.1;white-space:pre;">{{j}}</td>
+            {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock body %}

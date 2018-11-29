@@ -1,0 +1,20 @@
+{% extends "::base.bis.html.twig" %}
+
+{% block body %}
+    <table class="table table-bordered">
+        <thead>
+            <th class="active">Nom de l'équipement</th>
+            <th class="active">Résultat</th>
+            <th class="active">Match</th>
+            <th class="active">Détail</th>
+        </thead>
+        {% for i in data %}
+            <tr>
+            {% for j in i %}
+                <td class="text-left" style="line-height:1.1;white-space:pre;">{{j}}</td>
+            {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

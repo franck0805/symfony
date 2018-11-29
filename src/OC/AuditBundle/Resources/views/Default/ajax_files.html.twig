@@ -1,0 +1,8 @@
+<option value="null" disabled selected>Liste des fichiers</option>
+{% for file in results %}
+	{% if not loop.last %}
+		<option value="{{ file }}">{{ file }}</option>
+	{% else %}
+		<option selected value="{{ file }}">{{ file }}</option>
+	{% endif %}
+{% endfor %}

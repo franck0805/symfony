@@ -1,0 +1,46 @@
+{% extends "::base.bis.html.twig" %}
+
+{% block title %}- Administration des schedules{% endblock %}
+
+{% block body %}
+    <div class="col-md-12">
+        <div style="text-align:center">
+            <h4>Administration des schedule</h4><br>
+        </div>
+        <table class="table">
+            <thead>
+                <tr class="active">
+                    <th>Reseau / Type NE</th>
+                    <th>Constructeur</th>
+                    <th>Modèle</th>
+                    <th>Template</th>
+                    <th>Heure</th>
+                    <th>Type</th>
+                    <th>Récurrence</th>
+                    <th>CSV</th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for schedule in schedules %}
+                    <tr class={% if schedule.enable == 1 %}"success"{% else %}"danger"{% endif %}>
+                        <td>{{ schedule.idtemplate.idassociation }}</td>
+                        <td>{{ schedule.idtemplate.idconstructeur }}</td>
+                        <td>{{ schedule.idtemplate.idmodele }}</td>
+                        <td>{{ schedule.idtemplate.nom }}</td>
+                        <td>{{ schedule.heure|date("H:i") }}</td>
+                        <td>{{ schedule.type }}</td>
+                        <td>{{ schedule.recurrence }}</td>
+                        <th>{{ schedule.csv }}</th>
+                        {% if schedule.enable == 0 %}<td><a href="{{ path('jiwon_audit_schedule_admin_enable', {id:schedule.id}) }}"><i class="fa fa-check"></i></a></td>{% endif %}
+                        {% if schedule.enable == 1 %}<td><a href="{{ path('jiwon_audit_schedule_admin_disable', {id:schedule.id}) }}"><i class="fa fa-pause"></i></a></td>{% endif %}
+                        <td><a href="{{ path('jiwon_audit_modify_admin_schedule', {id:schedule.id}) }}"><i class="fa fa-pencil"></i></a></td>
+                        <td><a href="{{ path('jiwon_audit_delete_admin_schedule', {id:schedule.id}) }}"><i class="fa fa-times"></i></a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock body %}

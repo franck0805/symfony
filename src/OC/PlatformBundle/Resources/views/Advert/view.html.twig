@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block ocplatform_body %}
-    
+
     {# On vérifie qu'une image soit bien associée à l'annonce #}
     {% if advert.image is not null %}
       <img src="{{ advert.image.url }}" alt="{{ advert.image.alt }}" width="20%">
@@ -18,6 +18,14 @@
     <div class="well">
         {{ advert.content }}
     </div>
+
+    {% if listApplications is not null %}
+        <div>
+            {% for application in listApplications %}
+                <h6> <strong>{{ application.author }}</strong> :  {{ application.content }} <i>{{ application.date|date('d/m/Y') }}</i></h6>
+            {% endfor %}
+        </div>
+    {% endif %}
 
     <p>
       <a href="{{ path('oc_platform_home') }}" class="btn btn-default">

@@ -1,0 +1,83 @@
+jiwon_audit_homepage:
+    path:     /audit/
+    defaults: { _controller: JiwonAuditBundle:Default:index }
+
+jiwon_audit_schedule:
+    path:     /audit/schedule/
+    defaults: { _controller: JiwonAuditBundle:Default:schedule }
+
+jiwon_audit_template:
+    path:     /audit/template/
+    defaults: { _controller: JiwonAuditBundle:Default:template }
+
+jiwon_audit_recherche:
+    path:     /audit/recherche/
+    defaults: { _controller: JiwonAuditBundle:Default:recherche }
+
+jiwon_audit_modify_schedule:
+    path:     /audit/modify-schedule/{id}
+    defaults: { _controller: JiwonAuditBundle:Default:modschedule }
+
+jiwon_audit_delete_schedule:
+    path:     /audit/delete-schedule/{id}
+    defaults: { _controller: JiwonAuditBundle:Default:delschedule }
+
+jiwon_audit_modify_admin_schedule:
+    path:     /audit/admin-modify-schedule/{id}
+    defaults: { _controller: JiwonAuditBundle:Default:modadminschedule }
+
+jiwon_audit_delete_admin_schedule:
+    path:     /audit/admin-delete-schedule/{id}
+    defaults: { _controller: JiwonAuditBundle:Default:deladminschedule }
+
+jiwon_audit_schedule_admin:
+    path:     /audit/admin-schedule
+    defaults: { _controller: JiwonAuditBundle:Default:adminschedule }
+
+jiwon_audit_schedule_disable:
+    path:     /audit/disable-schedule/{id}
+    defaults: { _controller: JiwonAuditBundle:Default:disableschedule }
+
+jiwon_audit_schedule_admin_enable:
+    path:     /audit/admin-enable-schedule/{id}
+    defaults: { _controller: JiwonAuditBundle:Default:enableadminschedule }
+
+jiwon_audit_schedule_admin_disable:
+    path:     /audit/admin-disable-schedule/{id}
+    defaults: { _controller: JiwonAuditBundle:Default:disableadminschedule }
+
+jiwon_audit_csv:
+    path:     /ajax/csv
+    defaults: { _controller: JiwonAuditBundle:Default:csv }
+
+jiwon_audit_files:
+    path:     /ajax/files
+    defaults: { _controller: JiwonAuditBundle:Default:files }
+
+jiwon_audit_file:
+    path:     /ajax/file
+    defaults: { _controller: JiwonAuditBundle:Default:filecsv }
+
+jiwon_audit_file_preview:
+    path:     /ajax/file-preview
+    defaults: { _controller: JiwonAuditBundle:Default:filecsvpreview }
+
+jiwon_audit_download_csv:
+    path:     /audit/recherche/download/{template}/{file}/{ne}
+    defaults: { _controller: JiwonAuditBundle:Default:downloadcsv, ne: null }
+
+jiwon_audit_modify_template:
+    path:     /audit/admin-modify-template/{id}
+    defaults: { _controller: JiwonAuditBundle:Default:modadmintemplate }
+
+jiwon_audit_delete_template:
+    path:     /audit/admin-delete-template/{id}
+    defaults: { _controller: JiwonAuditBundle:Default:deladmintemplate }
+
+jiwon_audit_template_admin:
+    path:     /audit/admin-template/
+    defaults: { _controller: JiwonAuditBundle:Default:admintemplate }
+
+jiwon_audit_view_csv:
+    path:     /audit/recherche/view/{template}/{file}/{ne}
+    defaults: { _controller: JiwonAuditBundle:Default:result, ne: null }

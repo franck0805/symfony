@@ -4,6 +4,7 @@
 
 namespace OC\PlatformBundle\Controller;
 
+use OC\PlatformBundle\Entity\Application;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use OC\PlatformBundle\Entity\Advert;
 use OC\PlatformBundle\Entity\Image;
@@ -52,17 +53,24 @@ class AdvertController extends Controller
     public function viewAction($id)
     {
 
-        // On récupère le repository
-        $repository = $this->getDoctrine()->getManager()->getRepository("OCPlatformBundle:Advert");
+        // On récupère l'entity manager
+        $em = $this->getDoctrine()->getManager();
 
-        $advert = $repository->find($id);
+        // On récupère l'annonce d'id $id
+        $advert = $em->getRepository("OCPlatformBundle:Advert")->find($id);
 
         if(null === $advert){
             throw new NotFoundHttpException("L'annonce d'id " .$id. " n'existe pas!");
         }
 
+        // On récupère la liste des candidatures de cette annonce
+        $listApplications = $em
+            ->getRepository("OCPlatformBundle:Application")
+            ->findBy(array('advert' => $advert));
+
         return $this->render('OCPlatformBundle:Advert:view.html.twig', array(
-            'advert' => $advert
+            'advert' => $advert,
+            'listApplications' => $listApplications
         ));
     }
 
@@ -76,13 +84,19 @@ class AdvertController extends Controller
         $advert->setAuthor('Carter');
         $advert->setContent("Nous recherchons un développeur symfony débutant sur Lyon.");
 
-        // Création de l'entité Image
-        $image = new Image();
-        $image->setUrl('http://sdz-upload.s3.amazonaws.com/prod/upload/job-de-reve.jpg');
-        $image->setAlt('Job de rêve');
+        // Création d'une première candidature
+        $application1 = new Application();
+        $application1->setAuthor("Marine");
+        $application1->setContent("J'ai toutes les qualités requises");
 
-        // On lie l'image à l'annonce
-        $advert->setImage($image);
+        // Création d'une dexuième candidature
+        $application2 = new Application();
+        $application2->setAuthor("Pierre");
+        $application2->setContent("Je suis très motivé");
+
+        // On lie les candidatures à l'annonce
+        $application1->setAdvert($advert);
+        $application2->setAdvert($advert);
 
         //On récupère l'entity manager
         $em = $this->getDoctrine()->getManager();
@@ -90,8 +104,9 @@ class AdvertController extends Controller
         // Etape 1 : on persiste l'entité
         $em->persist($advert);
 
-        //$advert2 = $em->getRepository("OCPlatformBundle:Advert")->find(2);
-        //$advert2->setDate(new \DateTime());
+        // Etape 2 : on persite egalement les applications
+        $em->persist($application1);
+        $em->persist($application2);
 
         // Etape 2 :  on "flush" tout ce qui a été persisté avant
         //$em->clear('OC\PlatformBundle\Entity\Advert');
@@ -152,9 +167,9 @@ class AdvertController extends Controller
         // On fixe en dur une liste ici, bien entendu par la suite
         // on la récupérera depuis la BDD !
         $listAdverts = array(
-            array('id' => 2, 'title' => 'Recherche développeur Symfony'),
-            array('id' => 5, 'title' => 'Mission de webmaster'),
-            array('id' => 9, 'title' => 'Offre de stage webdesigner')
+            array('id' => 6, 'title' => 'Recherche développeur Symfony'),
+            array('id' => 7, 'title' => 'Mission de webmaster'),
+            array('id' => 8, 'title' => 'Offre de stage webdesigner')
         );
 
         return $this->render('OCPlatformBundle:Advert:menu.html.twig', array(
@@ -162,6 +177,22 @@ class AdvertController extends Controller
             // les variables nécessaires au template !
             'listAdverts' => $listAdverts
         ));
+    }
+
+    public function editImageAction($advertId)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        // On recupère l'annonce
+        $advert = $em->getRepository("OCPlatformBundle:Advert")->find($advertId);
+
+        // On modifie l'url de l'image
+        $advert->getImage()->setUrl("https://demo.phpgang.com/crop-images/demo_files/pool.jpg");
+
+        $em->flush();
+
+        return new Response("ok");
+        
     }
 
 

@@ -1,0 +1,162 @@
+{% extends "JiwonCCCPBundle::layout.html.twig" %}
+
+{% block title %}- Template{% endblock %}
+
+{% block body %}
+    {% if error is defined %}
+        <div class="alert alert-danger fade in">
+            <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+            {{ error }}
+        </div>
+    {% endif %}
+    <div class="col-md-12">
+        <h2>Création d'un template</h2>
+        <p>Cette page vous permet de créer un nouveau template.<br>
+        Vous pouvez renseigner des filtres afin d'appliquer votre template sur un réseau et/ou un constructeur ou modèle particulier.<br>
+        <b>Afin de vérifier l'appartenance d'une ligne à une classe, veuillez indenter votre template à la manière du fichier d'inventaire/sauvegarde Rancid.<br>
+        Le nom du template sera déterminé automatiquement en fonction des paramètres entrées.</b>
+        <br><br>
+        </p>
+    </div>
+    <form method="post">
+        <div class="col-md-7">
+            <p><b><i class="fa fa-exclamation-circle" aria-hidden="true"></i> Rappel : Indentation obligatoire pour vérifier l'appartenance d'une ligne à une classe.</b></p>
+        </div>
+        <div class="col-md-5 balise">
+            <p>Vous avez la possibilité d'ajouter jusqu'à 10 balises.<br></p>
+        </div>
+        <div class="col-md-6 form-group jumbotron">
+            <label class="col-md-3 label-control">Catégorie</label>
+            <div class="col-md-9">
+                <select class="form-control" name="template_categorie">
+                    {% for categorie in categories %}
+                        <option value="{{ categorie.id }}">{{ categorie }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <label class="col-md-3 label-control">Type</label>
+            <div class="col-md-9">
+                {% if is_granted('ROLE_SUPER_ADMIN') %}
+                    <select class="form-control" name="template_type">
+                        {% for type in types %}
+                            <option value="{{ type.id }}">{{ type }}</option>
+                        {% endfor %}
+                    </select>
+                {% else %}
+                    <select class="form-control" name="template_type">
+                        <option selected value="2">Sauvegarde</option>
+                    </select>
+                {% endif %}
+            </div>
+            <label class="col-md-3 label-control">Réseau</label>
+            <div class="col-md-9">
+                <select class="form-control" name="template_association">
+                    <option></option>
+                    {% for association in associations %}
+                        <option value="{{ association.id }}">{{ association }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-12"><br><br>Merci de seulement sélectionner <b>soit</b> un modèle, <b>soit</b> un constructeur. Si un modèle est sélectionné, le template s'appliquera pour ce modèle précis. Si un constructeur est sélectionné, le template s'appliquera pour l'ensemble des modèles de ce constructeur.<br><br></div>
+            <label class="col-md-3 label-control">Modèle</label>
+            <div class="col-md-9">
+                <select class="form-control" name="template_modele">
+                    <option></option>
+                    {% for modele in modeles %}
+                        <option value="{{ modele.id }}">{{ modele }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <label class="col-md-3 label-control">Constructeur</label>
+            <div class="col-md-9">
+                <select class="form-control" name="template_constructeur">
+                    <option></option>
+                    {% for constructeur in constructeurs %}
+                        <option value="{{ constructeur.id }}">{{ constructeur }}</option>
+                    {% endfor %}
+                </select>
+                <br>
+            </div>
+            <textarea style="font-size:13px;line-height:1.2;background:#F5F5F5;" class="form-control" placeholder="Mon template" id="mytemplate" rows="20" name="textarea_template"></textarea><br>
+            <button title="Match n'importe quelle chaine de caractère" class="btn btn-info" type="button" role="button" onclick="insertAtCaret('mytemplate','.*');return false;">.*</button>
+            <button title="Match n'importe quelle chaine de caractère et renvoie la ligne de configuration complète lors du résultat" class="btn btn-info" type="button" role="button" onclick="insertAtCaret('mytemplate','(.*)');return false;">(.*)</button>
+            <button title="Marque la fin exacte de la ligne" class="btn btn-info" type="button" role="button" onclick="insertAtCaret('mytemplate','<efl>');return false;" style="text-transform: lowercase;">&#60;efl&#62;</button>
+            <button title="Marque le début d'un block" class="btn btn-info" type="button" role="button" onclick="insertAtCaret('mytemplate','<block>');return false;" style="text-transform: lowercase;">&#60;block&#62;</button>
+        </div>
+        <div class="col-md-5 col-md-offset-1 form-group jumbotron input_fields_wrap balise">
+            <a href="#" class="add_field_button" onclick=""><i class="fa fa-plus-circle" aria-hidden="true"></i></a><br>
+            {% if variables is defined %}
+                {% for variable in variables %}
+                    <div>
+                        <br>
+                        <label class="col-md-2 label-control">Balise</label>
+                        <div class="col-md-10"><input class="form-control" name="balise[]" /></div>
+                        <label class="col-md-2 label-control">Valeurs</label>
+                        <div class="col-md-10"><input class="form-control" name="valeur[]" /></div>
+                        <a href="#" class="remove_field">Supprimer</a>
+                        <hr style="width:100%;color:grey;height:1px;background-color:grey;">
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="col-md-12">
+            <button type="submit" name="btnSubmit" value="save" class="btn btn-primary">Envoyer</button>
+        </div>
+    </form>
+{% endblock body %}
+
+{% block javascripts %}
+    <script>
+        $(document).ready(function() {
+            var max_fields      = 10;
+            var wrapper         = $(".input_fields_wrap");
+            var add_button      = $(".add_field_button");
+            
+            var x = 1;
+            $(add_button).click(function(e){
+                e.preventDefault();
+                if(x < max_fields){
+                    x++;
+                    $(wrapper).append('<div><br><label class="col-md-2 label-control">Balise</label><div class="col-md-10"><input class="form-control" name="balise[]" /></div><label class="col-md-2 label-control">Valeurs</label><div class="col-md-10"><input class="form-control" name="valeur[]" /></div><a href="#" class="remove_field">Supprimer</a><hr style="width:100%;color:grey;height:1px;background-color:grey;"></div>');
+                }
+            });
+            
+            $(wrapper).on("click",".remove_field", function(e){
+                e.preventDefault(); $(this).parent('div').remove(); x--;
+            })
+        });
+        function insertAtCaret(areaId,text) {
+            var txtarea = document.getElementById(areaId);
+            var scrollPos = txtarea.scrollTop;
+            var strPos = 0;
+            var br = ((txtarea.selectionStart || txtarea.selectionStart == '0') ? 
+                "ff" : (document.selection ? "ie" : false ) );
+            if (br == "ie") { 
+                txtarea.focus();
+                var range = document.selection.createRange();
+                range.moveStart ('character', -txtarea.value.length);
+                strPos = range.text.length;
+            }
+            else if (br == "ff") strPos = txtarea.selectionStart;
+
+            var front = (txtarea.value).substring(0,strPos);  
+            var back = (txtarea.value).substring(strPos,txtarea.value.length); 
+            txtarea.value=front+text+back;
+            strPos = strPos + text.length;
+            if (br == "ie") { 
+                txtarea.focus();
+                var range = document.selection.createRange();
+                range.moveStart ('character', -txtarea.value.length);
+                range.moveStart ('character', strPos);
+                range.moveEnd ('character', 0);
+                range.select();
+            }
+            else if (br == "ff") {
+                txtarea.selectionStart = strPos;
+                txtarea.selectionEnd = strPos;
+                txtarea.focus();
+            }
+            txtarea.scrollTop = scrollPos;
+        }
+    </script>
+{% endblock javascripts %}

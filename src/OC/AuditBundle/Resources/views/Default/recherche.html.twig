@@ -1,0 +1,221 @@
+{% extends "base.bis.html.twig" %}
+
+{% block title %}- Recherche{% endblock %}
+
+{% block body %}
+    <div class="col-md-7">
+        <h2>Recherche</h2>
+        <p>Cette page vous permet de configurer les templates des Audits de Configuration des Equipements Réseaux.<br>
+        Définissez les options plus bas et appuyez sur le bouton envoyer.<br><br>
+        </p>
+    </div>
+    <div class="col-md-5">
+        <br><br>
+        <div class="btn-group">
+            <a class="btn btn-primary" href="{{ path('jiwon_audit_homepage') }}" role="button">Lancer l'audit</a>
+        </div>
+        <div class="btn-group" style="margin-left:10px">
+            <a class="btn btn-success" href="{{ path('jiwon_audit_schedule') }}" role="button">Schedule</a>
+        </div>
+        <div class="btn-group" style="margin-left:10px">
+            <a class="btn btn-info" href="{{ path('jiwon_audit_template') }}" role="button">Template</a>
+        </div>
+    </div>
+    <div class="col-md-12 form-group jumbotron" id="menu">
+        <h4>Filtrez les résultats des audits selon vos critères</h4>
+        <p>Vous devez obligatoirement sélectionner un réseau/type_ne. Le constructeur et le modèle sont facultatifs. Une liste de fichiers correspondants à vos filtres vous sera présenté en-dessous.</p>
+        <div class="col-md-4">
+            <select class="form-control" id="association" onchange="getTemplates();getConstructeurs(this.value);getFiles();" name="reseau">
+                <option value="" disabled {% if reseau is null %}selected{% endif %}>Réseau / Type NE</option>
+                {% for association in associations %}
+                    <option {% if reseau is not null %}{% if reseau == association.id %}selected{% endif %}{% endif %} value="{{ association.id }}">{{ association.idreseau.reseau }} / {{ association.idtypene.type }}</option>
+                {% endfor %}
+            </select><br>
+        </div>
+        <div class="col-md-4">
+            <select id="constructeurs" class="form-control constructeurselect" onchange="getModels(this.value);getTemplates();getFiles();" name="constructeur">
+                <option value="" disabled selected>Constructeur</option>
+            </select><br>
+        </div>
+        <div class="col-md-4">
+            <select id="models" class="form-control" onchange="getFiles();getTemplates();" required="false" name="model">
+                <option value="null" selected>Modèle</option>
+            </select><br>
+        </div>
+        <div class="col-md-4">
+            <select id="template" class="form-control" name="template" onchange="getFiles();" required>
+                <option value="null" disabled selected>Template</option>
+                {% for temp in templates %}
+                    <option {% if template is not null %}{% if template == temp.id %}selected{% endif %}{% endif %} value="{{ temp.id }}">{{ temp.nom }}</option>
+                {% endfor %}
+            </select><br>
+        </div>
+        <div class="col-md-4">
+            <label>Date de début <input type="text" name="debut" id="debut" onchange="getFiles();" /></label><br>
+        </div>
+        <div class="col-md-4">
+            <label>Date de fin <input type="text" name="fin" id="fin" onchange="getFiles();" /></label><br>
+        </div>
+        <br><br>
+    </div>
+    <div class="col-md-4 form-group jumbotron">
+        <h4>Choisissez ensuite un fichier</h4>
+        <p>Le fichier CSV le plus récent sera sélectionné en premier. Vous pouvez le télécharger grâce au bouton ci-dessous. Il est possible de télécharger un extract du NE en cliquant sur la loupe. Les fichiers sont sous le format : Ymd-Hi.csv</p>
+        <select id="files" class="form-control" name="file" required onchange="showCsv();showDownload();getFilePreview(1);downloadCSV();viewCSV();">
+            <option value="" selected disabled>Liste des fichiers</option>
+        </select>
+        <h2><a href="#" style="display:none" class="btn btn-info" id="link"><i class="fa fa-cloud-download"></i> Exporter vers un CSV</a></h2>
+        <h2><a href="#" style="display:none" class="btn btn-info" id="download" onclick="window.open(this.href); return false;"><i class="fa fa fa-search"></i> Lecture via l'IHM Web</a></h2>
+    </div>
+    <div class="col-md-8" id="file">
+    </div>
+{% endblock body %}
+
+{% block javascripts %}
+    <script>
+        jQuery(document).ready(function(){
+            
+            jQuery('#debut').datetimepicker({
+                format:'d/m/Y H:i'
+            })
+            jQuery('#fin').datetimepicker({
+                format:'d/m/Y H:i'
+            });
+            $('.multipleselect').chosen({
+                placeholder_text_multiple : "Sélectionner un ou plusieurs exports",
+                no_results_text : "Pas de résultat",
+                search_contains: true,
+            });
+        });
+        {% if template is not null %}
+            var $reseau = $('#association');
+            $reseau.change();
+        {% endif %}
+        function getConstructeurs(id_asso){
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/constructeur_search',
+                data: "&id="+id_asso,
+                success: function(data) {
+                    $('#constructeurs').html(data).show();
+                    {% if construc is defined %}
+                        $("#constructeurs").val({{ construc }});
+                        $("#constructeurs").change();
+                    {% endif %}
+                }
+            });
+        };
+        function getModels(id_cons){
+            var e = document.getElementById("association");
+            var id_asso = e.options[e.selectedIndex].value;
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/model_search',
+                data: "&id="+id_cons+"&asso="+id_asso,
+                success: function(data) {
+                    $('#models').html(data).show();
+                    {% if modele is defined and modele != 'null' %}
+                            $("#models").val({{ modele }});
+                            $("#models").change();
+                    {% endif %}
+                }
+            });
+        };
+        function getTemplates(){
+            var e = document.getElementById("association");
+            var id_asso = e.options[e.selectedIndex].value;
+            var f = document.getElementById("models");
+            if(f.options[f.selectedIndex] != null) {
+                var id_model = f.options[f.selectedIndex].value;
+            }
+            else {
+                var id_model = "null";
+            }
+            var g = document.getElementById("constructeurs");
+            if(g.options[g.selectedIndex] != null) {
+                var cons = g.options[g.selectedIndex].value;
+            }
+            else {
+                var cons = "null";
+            }
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/template_search',
+                data: "&asso="+id_asso+"&cons="+cons+"&model="+id_model,
+                success: function(data) {
+                    $('#template').html(data).show();
+                    {% if template is defined and template != 'null' %}
+                        $("#template").val({{ template }});
+                        $("#template").change();
+                    {% endif %}
+                }
+            });
+        };
+        function getFiles(){
+            var e = document.getElementById("template");
+            var id_template = e.options[e.selectedIndex].value;
+            var debut = document.getElementById("debut").value;
+            var fin = document.getElementById("fin").value;
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/files',
+                data: "&id="+id_template+"&debut="+debut+"&fin="+fin,
+                success: function(data) {
+                    $('#files').html(data).show();
+                    $("#files").change();
+                }
+            });
+        };
+        function getFilePreview(page) {
+            var e = document.getElementById("template");
+            var id_template = e.options[e.selectedIndex].value;
+            var f = document.getElementById("files");
+            var file = f.options[f.selectedIndex].value;
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/file-preview',
+                data: "&id="+id_template+"&file="+file+"&page="+page,
+                success: function(data) {
+                    $('#file').html(data).show();
+                }
+            });
+        };
+        function getFile(page) {
+            var e = document.getElementById("template");
+            var id_template = e.options[e.selectedIndex].value;
+            var f = document.getElementById("files");
+            var file = f.options[f.selectedIndex].value;
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/file',
+                data: "&id="+id_template+"&file="+file+"&page="+page,
+                success: function(data) {
+                    $('#file').html(data).show();
+                }
+            });
+        };
+        function downloadCSV() {
+            var e = document.getElementById("template");
+            var template = e.options[e.selectedIndex].text;
+            var f = document.getElementById("files");
+            var file = f.options[f.selectedIndex].text;
+            $("#link").attr("href", 'download/'+template+'/'+file)
+        };
+        function viewCSV() {
+            var e = document.getElementById("template");
+            var template = e.options[e.selectedIndex].text;
+            var f = document.getElementById("files");
+            var file = f.options[f.selectedIndex].text;
+            $("#download").attr("href", 'view/'+template+'/'+file)
+        };
+        function showCsv(){
+            $("#link").show();
+        };
+        function showDownload(){
+            $("#download").show();
+        };
+        function hideCsv(){
+            $("#link").hide();
+        };
+    </script>
+{% endblock javascripts %}

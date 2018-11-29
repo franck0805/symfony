@@ -1,0 +1,330 @@
+{% extends "base.bis.html.twig" %}
+
+{% block title %}- Edition des templates{% endblock %}
+
+{% block body %}
+    {% if error is defined %}
+        <div class="alert alert-danger fade in">
+            <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+            {{ error }}
+        </div>
+    {% endif %}
+    <div class="col-md-7">
+        <h2>Edition des templates</h2>
+        <p>Cette page vous permet de configurer les templates des Audits de Configuration des Equipements Réseaux.<br>
+        <b>2 fonctionnalités s'offrent à vous sur cette page : Créer ou Editer un template.</b><br>
+        Pour ce faire, renseigner dans les filtres si votre template s'appliquera à un réseau et/ou un constructeur ou modèle particulier.<br>
+        Créer ensuite directement un template dans le formulaire plus bas (<b>sans sélectionner de template</b>), ou modifier un template existant (<b>en sélectionnant un template</b>).<br>
+        <b>Afin de vérifier l'appartenance d'une ligne à une classe, veuillez indenter votre template à la manière du fichier d'inventaire/sauvegarde Rancid.</b>
+        <br><br>
+        </p>
+    </div>
+    <div class="col-md-5">
+        <br><br>
+        <div class="btn-group">
+            <a class="btn btn-primary" href="{{ path('jiwon_audit_homepage') }}" role="button">Lancer l'audit</a>
+        </div>
+        <div class="btn-group" style="margin-left:10px">
+            <a class="btn btn-success" href="{{ path('jiwon_audit_schedule') }}" role="button">Schedule</a>
+        </div>
+        <div class="btn-group" style="margin-left:10px">
+            <a class="btn btn-warning" href="{{ path('jiwon_audit_recherche') }}" role="button">Recherche</a>
+        </div>
+        {% if is_granted('ROLE_SUPER_ADMIN') %}
+            <div class="btn-group" style="margin-left:10px">
+                <a class="btn btn-success" href="{{ path('jiwon_audit_template_admin') }}" role="button" target="_blank">Admin</a>
+            </div>
+        {% endif %}
+    </div>
+    <form method="post">
+        <div class="col-md-5">
+            <br><br><br>
+            <select class="form-control" name="source" id="divit">
+                <option value="DB">Formulaire facilité de Balise / Variable</option>
+                <option value="manual" {% if main is defined %}selected{% endif %}>Balise / Variable à la main</option>
+            </select><br>
+        </div>
+        <div class="col-md-12 form-group jumbotron" id="menu">
+            <h4>Filtrez selon vos critères</h4>
+            <p>Vous devez obligatoirement sélectionner un réseau/type_ne. Le constructeur et le modèle sont facultatifs. Vous pourrez alors choisir un template à éditer.</p>
+            <div class="col-md-4">
+                <select class="form-control" id="association" onchange="getTemplates();getConstructeurs(this.value);" name="reseau">
+                    <option value="" disabled {% if reseau is null %}selected{% endif %}>Réseau / Type NE</option>
+                    {% for association in associations %}
+                        <option {% if reseau is not null %}{% if reseau == association.id %}selected{% endif %}{% endif %} value="{{ association.id }}">{{ association.idreseau.reseau }} / {{ association.idtypene.type }}</option>
+                    {% endfor %}
+                </select><br>
+            </div>
+            <div class="col-md-4">
+                <select id="constructeurs" class="form-control constructeurselect" onchange="getModels(this.value);getTemplates();" name="constructeur">
+                    <option value="" disabled selected>Constructeur</option>
+                </select><br>
+            </div>
+            <div class="col-md-4">
+                <select id="models" class="form-control" onchange="getTemplates();" name="model">
+                    <option value="null" selected>Modèle</option>
+                </select><br>
+            </div>
+            <div class="col-md-4">
+                <select id="template" class="form-control" name="template" onChange="showAudit()">
+                    <option value="null" disabled selected>Template</option>
+                    {% for temp in templates %}
+                        <option {% if template is defined %}{% if template == temp.id %}selected{% endif %}{% endif %} value="{{ temp.id }}">{{ temp.nom }}</option>
+                    {% endfor %}
+                </select><br>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" id="_submit" class="btn btn-primary btn-sm" style="display:none">Afficher ce template</button>
+            </div>
+            <div class="col-md-12" id="rancid">
+                <p><b><i class="fa fa-exclamation-circle" aria-hidden="true"></i> Ne pas sélectionner de template si vous voulez en créer un.</b></p>
+            </div>
+            <br><br>
+        </div>
+        <div class="col-md-12">
+            <h4>Création/Edition du template</h4>
+        </div>
+        <div class="col-md-7">
+            <p>Si vous avez sélectionné un template pour le modifier, il s'affichera ici. Si vous n'avez pas sélectionné de template au préalable (formulaire vide), vous créerez un nouveau template.<br><br><b><i class="fa fa-exclamation-circle" aria-hidden="true"></i> Rappel : Indentation obligatoire pour vérifier l'appartenance d'une ligne à une classe.</b></p>
+        </div>
+        <div class="col-md-5 balise">
+            <p>Dans le cas d'une édition d'un template, vos balises s'afficheront ici, vous avez la possibilité d'en ajouter jusqu'à 10.<br></p>
+        </div>
+        <div class="col-md-5 parameter">
+            <p>Entrez vos différents paramètres sous la forme d'un CSV.<br>
+            </p>
+        </div>
+        <div class="col-md-6 form-group jumbotron">
+            <label class="col-md-3 label-control">Nom du template</label><div class="col-md-9"><input class="form-control" name="template_name" value="{% if name is defined %}{{ name }}{% endif %}{% if nom is defined %}{{ nom }}{% endif %}" /></div>
+            <label class="col-md-3 label-control">Version</label><div class="col-md-9"><input class="form-control" name="template_version" value="{% if version is defined %}{{ version }}{% endif %}"/></div>
+            <label class="col-md-3 label-control">Commentaire</label><div class="col-md-9"><input class="form-control" name="template_commentaire" value="{% if commentaire is defined %}{{ commentaire }}{% endif %}"/><br></div>
+            <textarea style="font-size:13px;line-height:1.2;background:#F5F5F5;" class="form-control" placeholder="Mon template" id="mytemplate" rows="20" name="textarea_template">{% if template_content is defined %}{{ template_content }}{% endif %}</textarea><br>
+            <button title="Match n'importe quelle chaine de caractère" class="btn btn-info" type="button" role="button" onclick="insertAtCaret('mytemplate','.*');return false;">.*</button>
+            <button title="Match n'importe quelle chaine de caractère et renvoie la ligne de configuration complète lors du résultat" class="btn btn-info" type="button" role="button" onclick="insertAtCaret('mytemplate','(.*)');return false;">(.*)</button>
+            <button title="Marque la fin exacte de la ligne" class="btn btn-info" type="button" role="button" onclick="insertAtCaret('mytemplate','<efl>');return false;" style="text-transform: lowercase;">&#60;efl&#62;</button>
+            <button title="Marque le début d'un block" class="btn btn-info" type="button" role="button" onclick="insertAtCaret('mytemplate','<block>');return false;" style="text-transform: lowercase;">&#60;block&#62;</button>
+        </div>
+        <div class="col-md-5 col-md-offset-1 form-group jumbotron input_fields_wrap balise">
+            {% if template is not defined %}
+                {% if balises_valeurs is defined %}
+                    <a href="#" class="add_field_button" onclick=""><i class="fa fa-plus-circle" aria-hidden="true"></i></a><br>
+                    {% for i in balises_valeurs %}
+                        <div>
+                            <br>
+                            <label class="col-md-2 label-control">Balise</label>
+                            <div class="col-md-10"><input class="form-control" name="balise[]" value="{{ i[0] }}" /></div>
+                            <label class="col-md-2 label-control">Valeurs</label>
+                            <div class="col-md-10"><input class="form-control" name="valeur[]" value="{{ i[1] }}" /></div> 
+                            <a href="#" class="remove_field">Supprimer</a>
+                            <hr style="width:100%;color:grey;height:1px;background-color:grey;">
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <a href="#" class="add_field_button" onclick=""><i class="fa fa-plus-circle" aria-hidden="true"></i></a><br>
+                    <label class="col-md-2 label-control">Balise</label>
+                    <div class="col-md-10">
+                        <input class="form-control" name="balise[]" />
+                    </div>
+                    <label class="col-md-2 label-control">Valeurs</label>
+                    <div class="col-md-10">
+                        <input class="form-control" name="valeur[]" id="valeur" /><br>
+                    </div>
+                    <hr style="width:100%;color:grey;height:1px;background-color:grey;">
+                {% endif %}
+            {% else %}
+                <a href="#" class="add_field_button" onclick=""><i class="fa fa-plus-circle" aria-hidden="true"></i></a><br>
+                {% if variables is defined %}
+                    {% if variables == null %}
+                        <label class="col-md-2 label-control">Balise</label>
+                        <div class="col-md-10">
+                            <input class="form-control" name="balise[]" />
+                        </div>
+                        <label class="col-md-2 label-control">Valeurs</label>
+                        <div class="col-md-10">
+                            <input class="form-control" name="valeur[]" id="valeur" /><br>
+                        </div>
+                        <hr style="width:100%;color:grey;height:1px;background-color:grey;">
+                    {% else %}
+                        {% for variable in variables %}
+                            <div>
+                                <br>
+                                <label class="col-md-2 label-control">Balise</label>
+                                <div class="col-md-10"><input class="form-control" name="balise[]" value="{{ variable.balise }}" /></div>
+                                <label class="col-md-2 label-control">Valeurs</label>
+                                <div class="col-md-10"><input class="form-control" name="valeur[]" value="{{ variable.valeur }}" /></div>
+                                <a href="#" class="remove_field">Supprimer</a>
+                                <hr style="width:100%;color:grey;height:1px;background-color:grey;">
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+        </div>
+        <div class="col-md-5 form-group jumbotron parameter">
+            <textarea class="form-control" placeholder="Mes paramètres" rows="10" style="background:#F5F5F5;" name="main">{% if main is defined %}{{ main }}{% endif %}</textarea>
+        </div>
+        <div class="col-md-12">
+            <button type="submit" name="btnSubmit" value="save" class="btn btn-primary">Envoyer</button>
+        </div>
+    </form>
+{% endblock body %}
+
+{% block javascripts %}
+    <script>
+	{% if template is defined %}
+        {% if template is not null %}
+            var $reseau = $('#association');
+            $reseau.change();
+        {% endif %}
+	{% endif %}
+        function getConstructeurs(id_asso){
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/constructeur_search',
+                data: "&id="+id_asso,
+                success: function(data) {
+                    $('#constructeurs').html(data).show();
+                    {% if construc is defined %}
+                        $("#constructeurs").val({{ construc }});
+                        $("#constructeurs").change();
+                    {% endif %}
+                }
+            });
+        };
+        function getModels(id_cons){
+            var e = document.getElementById("association");
+            var id_asso = e.options[e.selectedIndex].value;
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/model_search',
+                data: "&id="+id_cons+"&asso="+id_asso,
+                success: function(data) {
+                    $('#models').html(data).show();
+                    {% if modele is defined and modele != 'null' %}
+                        $("#models").val({{ modele }});
+                        $("#models").change();
+                    {% endif %}
+                }
+            });
+        };
+        function getTemplates(){
+            var e = document.getElementById("association");
+            var id_asso = e.options[e.selectedIndex].value;
+            var f = document.getElementById("models");
+            if(f.options[f.selectedIndex] != null) {
+                var id_model = f.options[f.selectedIndex].value;
+            }
+            else {
+                var id_model = "null";
+            }
+            var g = document.getElementById("constructeurs");
+            if(g.options[g.selectedIndex] != null) {
+                var cons = g.options[g.selectedIndex].value;
+            }
+            else {
+                var cons = "null";
+            }
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/template_search',
+                data: "&asso="+id_asso+"&cons="+cons+"&model="+id_model,
+                success: function(data) {
+                    $('#template').html(data).show();
+                    {% if template is defined and template != 'null' %}
+                        $("#template").val({{ template }});
+                        $("#template").change();
+                    {% endif %}
+                }
+            });
+        };
+        function getCrontabs(id_template){
+            var e = document.getElementById("template");
+            var id_template = e.options[e.selectedIndex].value;
+            $.ajax({
+                type: 'POST',
+                url: '/ajax/crontab_search',
+                data: "&temp="+id_template,
+                success: function(data) {
+                    $('#crontabs').html(data).show();
+                }
+            });
+        };
+        $(document).ready(function() {
+            var max_fields      = 10;
+            var wrapper         = $(".input_fields_wrap");
+            var add_button      = $(".add_field_button");
+            
+            var x = 1;
+            $(add_button).click(function(e){
+                e.preventDefault();
+                if(x < max_fields){
+                    x++;
+                    $(wrapper).append('<div><br><label class="col-md-2 label-control">Balise</label><div class="col-md-10"><input class="form-control" name="balise[]" /></div><label class="col-md-2 label-control">Valeurs</label><div class="col-md-10"><input class="form-control" name="valeur[]" /></div><a href="#" class="remove_field">Supprimer</a><hr style="width:100%;color:grey;height:1px;background-color:grey;"></div>');
+                }
+            });
+            
+            $(wrapper).on("click",".remove_field", function(e){
+                e.preventDefault(); $(this).parent('div').remove(); x--;
+            })
+        });
+        function insertAtCaret(areaId,text) {
+            var txtarea = document.getElementById(areaId);
+            var scrollPos = txtarea.scrollTop;
+            var strPos = 0;
+            var br = ((txtarea.selectionStart || txtarea.selectionStart == '0') ? 
+                "ff" : (document.selection ? "ie" : false ) );
+            if (br == "ie") { 
+                txtarea.focus();
+                var range = document.selection.createRange();
+                range.moveStart ('character', -txtarea.value.length);
+                strPos = range.text.length;
+            }
+            else if (br == "ff") strPos = txtarea.selectionStart;
+
+            var front = (txtarea.value).substring(0,strPos);  
+            var back = (txtarea.value).substring(strPos,txtarea.value.length); 
+            txtarea.value=front+text+back;
+            strPos = strPos + text.length;
+            if (br == "ie") { 
+                txtarea.focus();
+                var range = document.selection.createRange();
+                range.moveStart ('character', -txtarea.value.length);
+                range.moveStart ('character', strPos);
+                range.moveEnd ('character', 0);
+                range.select();
+            }
+            else if (br == "ff") {
+                txtarea.selectionStart = strPos;
+                txtarea.selectionEnd = strPos;
+                txtarea.focus();
+            }
+            txtarea.scrollTop = scrollPos;
+        }
+        function displayVals() {
+            switch ($("#divit").val()) {
+                case 'DB':
+                    $(".parameter").hide();
+                    $(".balise").show();
+                break;
+                case 'manual':
+                    $(".balise").hide();
+                    $(".parameter").show();
+                break;
+            }
+        };
+        function showAudit(){
+            var e = document.getElementById("template");
+            var id_template = e.options[e.selectedIndex].value;
+            if(id_template == "null")
+            {
+                $("#_submit").hide();
+            }
+            else
+            {
+                $("#_submit").show();
+            }
+        };
+        $("select").change(displayVals);
+        displayVals();
+    </script>
+{% endblock javascripts %}

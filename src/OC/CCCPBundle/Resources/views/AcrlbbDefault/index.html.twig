@@ -1,0 +1,74 @@
+{% extends "base.bis.html.twig" %}
+
+{% block title %}- ACER v3{% endblock %}
+
+{% block body %}
+    <div class="col-md-12">
+        <h2>Audit des Configurations réseaux des liens BB</h2>
+        <p>Cette page vous permet de lancer un audit des configurations réseaux des équipements BB<br></p>
+    </div>
+
+    <div class="col-md-12">
+        <form method="post" class="form-horizontal">
+            <div class="col-md-12 form-group">
+                <div class="col-md-12">
+                    <label class="col-md-3" for="ne" style="padding-left: 0px;padding-right: 0px;">Nom de l'équipement:*</label>
+                    <div class="col-md-3">
+                        <input type="text" id="ne" name="ne" required="required" class="form-control" oncopy="return true" onpaste="return true">
+                    </div>
+                    <div class="col-md-6"></div>
+                </div>
+                <div class="col-md-6" style="padding-left: 0px; padding-right: 0px; text-align: center;">*Vous devez obligatoirement taper au moins 2 lettres.</div>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-md-12">
+        <p><i>Selectionnez de parser tout le réseau ou une archi cible</i></p>
+    </div>
+    <table class="order-table table table-hover table-header-rotated">
+        <tbody>
+        {{ results|raw }}
+        </tbody>
+    </table>
+{% endblock body %}
+
+{% block javascripts %}
+    <script>
+        jQuery(document).ready(function(){
+            $('#ne').autocompleter({
+                url_list: '/ajax/searchne',
+                url_get: '/ajax/searchne',
+            });
+            $("#ne").bind("paste", function () {
+                setTimeout(function () {
+                    $('#ne').autocompleter({
+                        url_list: '/ajax/searchne',
+                        url_get: '/ajax/searchne',
+                    });
+                }, 0);
+            });
+        });
+        function showTable(button) {
+            button.innerHTML = "<i class='fa fa-minus-square-o' aria-hidden='true'>";
+            var allTr = document.querySelectorAll('tr[class$='+$(button).data('class')+']'), i;
+            var regex2 = new RegExp("_"+$(button).data('class'));
+            for (i = 0; i < allTr.length; ++i) {
+                console.log(allTr[i].innerHTML);
+                if(allTr[i].innerHTML.match(regex2)) continue;
+                allTr[i].style.display = "";
+            }
+            $(button).attr("onclick", "hideTable(this)");
+        };
+        function hideTable(button) {
+            button.innerHTML = "<i class='fa fa-plus-square-o' aria-hidden='true'>";
+            var allTr = document.querySelectorAll('tr[class*='+$(button).data('class')+']'), i;
+            for (i = 0; i < allTr.length; ++i) {
+                allTr[i].innerHTML = allTr[i].innerHTML.replace("fa-minus-square-o", "fa-plus-square-o");
+                allTr[i].innerHTML = allTr[i].innerHTML.replace("hideTable", "showTable");
+                allTr[i].style.display = "none";
+            }
+            $(button).attr("onclick", "showTable(this)");
+        };
+    </script>
+{% endblock javascripts %}
